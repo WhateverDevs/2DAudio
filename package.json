@@ -1,0 +1,14 @@
+{
+  "name": "whateverdevs.2daudio",
+  "version": "0.0.1",
+  "dependencies": {
+    "whateverdevs.core": "0.0.80"
+  },
+  "displayName": "2D Audio",
+  "description": "Whateverdevs' 2D audio system.",
+  "unity": "2021.1",
+  "author": {
+    "name": "Whatever Devs",
+    "url": "https://discord.gg/B8aaMzJ"
+  }
+}
