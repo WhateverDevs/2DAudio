@@ -10,6 +10,11 @@ namespace WhateverDevs.TwoDAudio.Runtime
     public interface IAudioLibrary
     {
         /// <summary>
+        /// Method to know if the library has been initialized.
+        /// </summary>
+        bool IsInitialized();
+        
+        /// <summary>
         /// Get a list of all the audio names available.
         /// </summary>
         /// <returns>A list of strings with the audio names.</returns>
@@ -20,5 +25,12 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         /// <returns></returns>
         List<AssetReferenceT<AudioClip>> GetAllAudios();
+
+        /// <summary>
+        /// Check if an audio is available to play.
+        /// </summary>
+        /// <param name="audioName"></param>
+        /// <returns></returns>
+        bool IsAudioAvailable(string audioName);
     }
 }

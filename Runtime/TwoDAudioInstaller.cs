@@ -21,7 +21,13 @@ namespace WhateverDevs.TwoDAudio.Runtime
         {
             Container.QueueForInject(AudioLibrary);
 
+            IAudioManager audioManager = AudioManager.Instance;
+            
+            Container.QueueForInject(audioManager);
+
             Container.Bind<IAudioLibrary>().FromInstance(AudioLibrary).AsSingle().Lazy();
+
+            Container.Bind<IAudioManager>().FromInstance(audioManager).AsSingle().Lazy();
         }
     }
 }
