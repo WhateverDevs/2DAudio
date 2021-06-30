@@ -21,6 +21,6 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="audioReference"></param>
         /// <returns></returns>
         public bool IsAudioAvailable(AudioReference audioReference) =>
-            audioLibrary.IsAudioAvailable(audioReference.Audio);
+            audioLibrary.IsAudioAvailable(audioReference);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Audio;
 
 namespace WhateverDevs.TwoDAudio.Runtime
 {
@@ -25,6 +26,13 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         /// <returns></returns>
         List<AssetReferenceT<AudioClip>> GetAllAudios();
+        
+        /// <summary>
+        /// Check if an audio is available to play.
+        /// </summary>
+        /// <param name="audioReference"></param>
+        /// <returns></returns>
+        bool IsAudioAvailable(AudioReference audioReference);
 
         /// <summary>
         /// Check if an audio is available to play.
@@ -32,5 +40,26 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="audioName"></param>
         /// <returns></returns>
         bool IsAudioAvailable(string audioName);
+        
+        /// <summary>
+        /// Get the mixer group of an audio.
+        /// </summary>
+        /// <param name="audioReference"></param>
+        /// <returns></returns>
+        AudioMixerGroup GetGroupForAudio(AudioReference audioReference);
+
+        /// <summary>
+        /// Get the mixer group of an audio.
+        /// </summary>
+        /// <param name="audioName"></param>
+        /// <returns></returns>
+        AudioMixerGroup GetGroupForAudio(string audioName);
+        
+        /// <summary>
+        /// Get the mixer group of an audio.
+        /// </summary>
+        /// <param name="audio"></param>
+        /// <returns></returns>
+        AudioMixerGroup GetGroupForAudio(AssetReferenceT<AudioClip> audio);
     }
 }

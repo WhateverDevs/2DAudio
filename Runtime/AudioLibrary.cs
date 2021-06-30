@@ -1,8 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Audio;
 using WhateverDevs.Core.Runtime.Common;
+using WhateverDevs.Core.Runtime.DataStructures;
 using WhateverDevs.SceneManagement.Runtime.AddressableManagement;
 using Zenject;
 
@@ -14,10 +17,17 @@ namespace WhateverDevs.TwoDAudio.Runtime
     public class AudioLibrary : LoggableScriptableObject<AudioLibrary>, IAudioLibrary
     {
         /// <summary>
-        /// List that holds all the 2D audios in the game.
+        /// List that holds all the 2D audios in the game and the mixer group they belong to.
         /// </summary>
         [SerializeField]
-        private List<AssetReferenceT<AudioClip>> Audios;
+        private List<AudioAssetReferenceAudioMixerGroupPair> Audios;
+
+        /// <summary>
+        /// Cached list of the audio assets for easy handling.
+        /// </summary>
+        [SerializeField]
+        [HideInInspector]
+        private List<AssetReferenceT<AudioClip>> AudioAssets;
 
         /// <summary>
         /// Cached list of all audio names.
@@ -25,6 +35,13 @@ namespace WhateverDevs.TwoDAudio.Runtime
         [SerializeField]
         [HideInInspector]
         private List<string> AudioNames;
+
+        /// <summary>
+        /// Cached list of the groups on the same order as the audios.
+        /// </summary>
+        [SerializeField]
+        [HideInInspector]
+        private List<AudioMixerGroup> CachedGroups;
 
         /// <summary>
         /// Reference to the addressable manager.
@@ -64,7 +81,14 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// Get a list of all audios.
         /// </summary>
         /// <returns></returns>
-        public List<AssetReferenceT<AudioClip>> GetAllAudios() => Audios.ShallowClone();
+        public List<AssetReferenceT<AudioClip>> GetAllAudios() => AudioAssets.ShallowClone();
+
+        /// <summary>
+        /// Check if an audio is available to play.
+        /// </summary>
+        /// <param name="audioReference"></param>
+        /// <returns></returns>
+        public bool IsAudioAvailable(AudioReference audioReference) => IsAudioAvailable(audioReference.Audio);
 
         /// <summary>
         /// Check if an audio is available to play.
@@ -80,12 +104,35 @@ namespace WhateverDevs.TwoDAudio.Runtime
         }
 
         /// <summary>
+        /// Get the mixer group of an audio.
+        /// </summary>
+        /// <param name="audioReference"></param>
+        /// <returns></returns>
+        public AudioMixerGroup GetGroupForAudio(AudioReference audioReference) =>
+            GetGroupForAudio(audioReference.Audio);
+
+        /// <summary>
+        /// Get the mixer group of an audio.
+        /// </summary>
+        /// <param name="audioName"></param>
+        /// <returns></returns>
+        public AudioMixerGroup GetGroupForAudio(string audioName) => GetGroupForAudio(NameToAssetReference(audioName));
+
+        /// <summary>
+        /// Get the mixer group of an audio.
+        /// </summary>
+        /// <param name="audio"></param>
+        /// <returns></returns>
+        public AudioMixerGroup GetGroupForAudio(AssetReferenceT<AudioClip> audio) =>
+            CachedGroups[AudioAssets.IndexOf(audio)];
+
+        /// <summary>
         /// Translate audio name to asset reference.
         /// </summary>
         /// <param name="audioName"></param>
         /// <returns></returns>
         private AssetReferenceT<AudioClip> NameToAssetReference(string audioName) =>
-            Audios[AudioNames.IndexOf(audioName)];
+            AudioAssets[AudioNames.IndexOf(audioName)];
 
         #if UNITY_EDITOR
 
@@ -95,13 +142,21 @@ namespace WhateverDevs.TwoDAudio.Runtime
         [InfoBox("Remember clicking the button when you modify the list!")]
         [PropertyOrder(-1)]
         [Button]
-        private void CacheAudioNames()
+        private void CacheAudioReferences()
         {
+            AudioAssets = new List<AssetReferenceT<AudioClip>>();
+
             AudioNames = new List<string>();
 
+            CachedGroups = new List<AudioMixerGroup>();
+
             for (int i = 0; i < Audios.Count; ++i)
-                if (Audios[i] != null && Audios[i].editorAsset != null)
-                    AudioNames.Add(Audios[i].editorAsset.name);
+                if (Audios[i] != null && Audios[i].Key.editorAsset != null)
+                {
+                    AudioAssets.Add(Audios[i].Key);
+                    AudioNames.Add(AudioAssets[i].editorAsset.name);
+                    CachedGroups.Add(Audios[i].Value);
+                }
         }
         #endif
     }
