@@ -1,11 +1,11 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Audio;
 using WhateverDevs.Core.Runtime.Common;
-using WhateverDevs.Core.Runtime.DataStructures;
 using WhateverDevs.SceneManagement.Runtime.AddressableManagement;
 using Zenject;
 
@@ -95,12 +95,63 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         /// <param name="audioName"></param>
         /// <returns></returns>
-        public bool IsAudioAvailable(string audioName)
+        public bool IsAudioAvailable(string audioName) => IsAudioAvailable(NameToAssetReference(audioName));
+
+        /// <summary>
+        /// Check if an audio is available to play.
+        /// </summary>
+        /// <param name="audio"></param>
+        /// <returns></returns>
+        public bool IsAudioAvailable(AssetReferenceT<AudioClip> audio)
         {
-            if (IsInitialized()) return addressableManager.IsAssetAvailable(NameToAssetReference(audioName));
+            if (IsInitialized()) return addressableManager.IsAssetAvailable(audio);
 
             Logger.Error("Audio library not initialized yet!");
             return false;
+        }
+
+        /// <summary>
+        /// Get an audio asset and group from its reference.
+        /// </summary>
+        /// <param name="audioReference"></param>
+        /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
+        public void GetAudioAsset(AudioReference audioReference, Action<bool, AudioClip, AudioMixerGroup> callback) =>
+            GetAudioAsset(audioReference.Audio, callback);
+
+        /// <summary>
+        /// Get an audio asset and group from its name.
+        /// </summary>
+        /// <param name="audioName"></param>
+        /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
+        public void GetAudioAsset(string audioName, Action<bool, AudioClip, AudioMixerGroup> callback) =>
+            GetAudioAsset(NameToAssetReference(audioName), callback);
+
+        /// <summary>
+        /// Get an audio asset and group from its asset reference.
+        /// </summary>
+        /// <param name="audio"></param>
+        /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
+        public void GetAudioAsset(AssetReferenceT<AudioClip> audio, Action<bool, AudioClip, AudioMixerGroup> callback)
+        {
+            if (!IsAudioAvailable(audio)) callback?.Invoke(false, null, null);
+
+            if (audio.Asset == null)
+                CoroutineRunner.Instance.StartCoroutine(GetAudioAssetRoutine(audio, callback));
+            else
+                callback?.Invoke(true, (AudioClip) audio.Asset, GetGroupForAudio(audio));
+        }
+
+        /// <summary>
+        /// Get an audio asset and group from its asset reference.
+        /// </summary>
+        /// <param name="audio"></param>
+        /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
+        private IEnumerator GetAudioAssetRoutine(AssetReferenceT<AudioClip> audio,
+                                                 Action<bool, AudioClip, AudioMixerGroup> callback)
+        {
+            yield return audio.LoadAssetAsync();
+
+            callback?.Invoke(true, (AudioClip) audio.Asset, GetGroupForAudio(audio));
         }
 
         /// <summary>
