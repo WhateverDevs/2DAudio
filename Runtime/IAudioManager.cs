@@ -16,6 +16,18 @@
         /// Play an audio once.
         /// </summary>
         /// <param name="audioReference">The audio to play.</param>
-        void PlayAudioOnce(AudioReference audioReference);
+        /// <param name="loop">Loop the audio?</param>
+        void PlayAudio(AudioReference audioReference, bool loop = false);
+
+        /// <summary>
+        /// Stop the given audio if it's playing.
+        /// </summary>
+        /// <param name="audioReference"></param>
+        void StopAudio(AudioReference audioReference);
+
+        /// <summary>
+        /// Stop all audios, probably only used in abort situations.
+        /// </summary>
+        void StopAllAudios();
     }
 }
