@@ -68,9 +68,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
 
                                            for (int i = 0; i < audioSourcePool.Count; ++i)
                                                if (audioSourcePool[i].clip == clip)
-                                               {
                                                    audioSourcePool[i].Stop();
-                                               }
                                        });
 
         /// <summary>
@@ -120,13 +118,29 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         private void CheckAudioSourceAvailability()
         {
+            List<AudioClip> clipsToFree = new List<AudioClip>();
+
             for (int i = 0; i < audioSourcePool.Count; ++i)
             {
                 if (audioSourceAvailability[i] || audioSourcePool[i].isPlaying) continue;
+
+                clipsToFree.Add(audioSourcePool[i].clip);
+
                 audioSourcePool[i].clip = null;
-                audioSourcePool[i].clip = null;
+                audioSourcePool[i].outputAudioMixerGroup = null;
                 audioSourcePool[i].loop = false;
                 audioSourceAvailability[i] = true;
+            }
+
+            for (int i = 0; i < clipsToFree.Count; ++i)
+            {
+                bool canFree = true;
+
+                for (int j = 0; j < audioSourcePool.Count; ++j)
+                    if (audioSourcePool[j].clip == clipsToFree[i])
+                        canFree = false;
+
+                if (canFree) audioLibrary.FreeAudioAsset(clipsToFree[i].name);
             }
         }
     }

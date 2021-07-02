@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Audio;
 using WhateverDevs.Core.Runtime.Common;
+using WhateverDevs.Core.Runtime.DataStructures;
 using WhateverDevs.SceneManagement.Runtime.AddressableManagement;
 using Zenject;
 
@@ -21,6 +22,14 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         [SerializeField]
         private List<AudioAssetReferenceAudioMixerGroupPair> Audios;
+
+        /// <summary>
+        /// Seconds to wait until free audios are unloaded from RAM.
+        /// </summary>
+        [Tooltip("Seconds to wait until free audios are unloaded from RAM.")]
+        [FoldoutGroup("Configuration")]
+        [HideInPlayMode]
+        public float SecondsToUnLoadFreeAudiosFromRam = 120f;
 
         /// <summary>
         /// Cached list of the audio assets for easy handling.
@@ -44,6 +53,14 @@ namespace WhateverDevs.TwoDAudio.Runtime
         private List<AudioMixerGroup> CachedGroups;
 
         /// <summary>
+        /// Dictionary with the audios that are loaded and not in use and the time they haven't been in use.
+        /// </summary>
+        [SerializeField]
+        [ReadOnly]
+        [HideInEditorMode]
+        private SerializableDictionary<string, float> FreeAudios;
+
+        /// <summary>
         /// Reference to the addressable manager.
         /// </summary>
         private IAddressableManager addressableManager;
@@ -62,6 +79,10 @@ namespace WhateverDevs.TwoDAudio.Runtime
         {
             initialized = false;
             addressableManager = addressableManagerReference;
+
+            FreeAudios = new SerializableDictionary<string, float>();
+
+            AppEventsListener.Instance.AppUpdate += CheckFreeAudiosAndUnload;
 
             addressableManager.CheckAvailableAddressables(report => initialized = true);
         }
@@ -135,10 +156,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         {
             if (!IsAudioAvailable(audio)) callback?.Invoke(false, null, null);
 
-            if (audio.Asset == null)
-                CoroutineRunner.Instance.StartCoroutine(GetAudioAssetRoutine(audio, callback));
-            else
-                callback?.Invoke(true, (AudioClip) audio.Asset, GetGroupForAudio(audio));
+            CoroutineRunner.Instance.StartCoroutine(GetAudioAssetRoutine(audio, callback));
         }
 
         /// <summary>
@@ -149,9 +167,26 @@ namespace WhateverDevs.TwoDAudio.Runtime
         private IEnumerator GetAudioAssetRoutine(AssetReferenceT<AudioClip> audio,
                                                  Action<bool, AudioClip, AudioMixerGroup> callback)
         {
-            yield return audio.LoadAssetAsync();
+            if (audio.Asset == null) yield return audio.LoadAssetAsync();
+
+            if (FreeAudios.ContainsKey(audio.Asset.name)) FreeAudios.Remove(audio.Asset.name);
 
             callback?.Invoke(true, (AudioClip) audio.Asset, GetGroupForAudio(audio));
+        }
+
+        /// <summary>
+        /// Used to inform that an audio asset is no longer in use.
+        /// </summary>
+        /// <param name="audioReference">The audio reference to free.</param>
+        public void FreeAudioAsset(AudioReference audioReference) => FreeAudioAsset(audioReference.Audio);
+
+        /// <summary>
+        /// Used to inform that an audio asset is no longer in use.
+        /// </summary>
+        /// <param name="audioName">The audio name to free.</param>
+        public void FreeAudioAsset(string audioName)
+        {
+            if (!FreeAudios.ContainsKey(audioName)) FreeAudios[audioName] = 0;
         }
 
         /// <summary>
@@ -184,6 +219,30 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <returns></returns>
         private AssetReferenceT<AudioClip> NameToAssetReference(string audioName) =>
             AudioAssets[AudioNames.IndexOf(audioName)];
+
+        /// <summary>
+        /// Check the available audios and unload if they've too much time without being used.
+        /// </summary>
+        /// <param name="deltaTime"></param>
+        private void CheckFreeAudiosAndUnload(float deltaTime)
+        {
+            List<string> audiosToUnload = new List<string>();
+
+            foreach (KeyValuePair<string, float> keyValuePair in FreeAudios)
+            {
+                FreeAudios[keyValuePair.Key] += deltaTime;
+
+                if (FreeAudios[keyValuePair.Key] > SecondsToUnLoadFreeAudiosFromRam)
+                    audiosToUnload.Add(keyValuePair.Key);
+            }
+
+            for (int i = 0; i < audiosToUnload.Count; ++i)
+            {
+                FreeAudios.Remove(audiosToUnload[i]);
+                
+                NameToAssetReference(audiosToUnload[i]).ReleaseAsset();
+            }
+        }
 
         #if UNITY_EDITOR
 

@@ -69,7 +69,19 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="audio"></param>
         /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
         void GetAudioAsset(AssetReferenceT<AudioClip> audio, Action<bool, AudioClip, AudioMixerGroup> callback);
+
+        /// <summary>
+        /// Used to inform that an audio asset is no longer in use.
+        /// </summary>
+        /// <param name="audioReference">The audio reference to free.</param>
+        void FreeAudioAsset(AudioReference audioReference);
         
+        /// <summary>
+        /// Used to inform that an audio asset is no longer in use.
+        /// </summary>
+        /// <param name="audioName">The audio name to free.</param>
+        void FreeAudioAsset(string audioName);
+
         /// <summary>
         /// Get the mixer group of an audio.
         /// </summary>
