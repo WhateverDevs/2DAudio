@@ -152,12 +152,9 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         /// <param name="audio"></param>
         /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
-        public void GetAudioAsset(AssetReferenceT<AudioClip> audio, Action<bool, AudioClip, AudioMixerGroup> callback)
-        {
-            if (!IsAudioAvailable(audio)) callback?.Invoke(false, null, null);
-
+        public void
+            GetAudioAsset(AssetReferenceT<AudioClip> audio, Action<bool, AudioClip, AudioMixerGroup> callback) =>
             CoroutineRunner.Instance.StartCoroutine(GetAudioAssetRoutine(audio, callback));
-        }
 
         /// <summary>
         /// Get an audio asset and group from its asset reference.
@@ -167,7 +164,17 @@ namespace WhateverDevs.TwoDAudio.Runtime
         private IEnumerator GetAudioAssetRoutine(AssetReferenceT<AudioClip> audio,
                                                  Action<bool, AudioClip, AudioMixerGroup> callback)
         {
-            if (audio.Asset == null) yield return audio.LoadAssetAsync();
+            if (!initialized) yield return new WaitUntil(() => initialized);
+
+            if (!IsAudioAvailable(audio)) callback?.Invoke(false, null, null);
+
+            if (audio.Asset == null)
+            {
+                if (!audio.OperationHandle.IsValid())
+                    yield return audio.LoadAssetAsync();
+                else
+                    yield return new WaitUntil(() => audio.OperationHandle.IsDone);
+            }
 
             if (FreeAudios.ContainsKey(audio.Asset.name)) FreeAudios.Remove(audio.Asset.name);
 
@@ -239,7 +246,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
             for (int i = 0; i < audiosToUnload.Count; ++i)
             {
                 FreeAudios.Remove(audiosToUnload[i]);
-                
+
                 NameToAssetReference(audiosToUnload[i]).ReleaseAsset();
             }
         }
