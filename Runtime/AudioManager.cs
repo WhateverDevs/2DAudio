@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using WhateverDevs.Core.Runtime.Common;
 using Zenject;
+
+#if ODIN_INSPECTOR_3
+using Sirenix.OdinInspector;
+#endif
 
 namespace WhateverDevs.TwoDAudio.Runtime
 {
@@ -40,8 +43,10 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         /// <param name="audioReference">The audio to play.</param>
         /// <param name="loop">Loop the audio?</param>
+        #if ODIN_INSPECTOR_3
         [FoldoutGroup("Debug")]
         [Button]
+        #endif
         public void PlayAudio(AudioReference audioReference, bool loop = false) =>
             audioLibrary.GetAudioAsset(audioReference,
                                        (success, clip, group) =>
@@ -62,7 +67,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="audioReference"></param>
         public void StopAudio(AudioReference audioReference) =>
             audioLibrary.GetAudioAsset(audioReference,
-                                       (success, clip, group) =>
+                                       (success, clip, _) =>
                                        {
                                            if (!success) return;
 
@@ -74,8 +79,10 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <summary>
         /// Stop all audios, probably only used in abort situations.
         /// </summary>
+        #if ODIN_INSPECTOR_3
         [FoldoutGroup("Debug")]
         [Button]
+        #endif
         public void StopAllAudios()
         {
             for (int i = 0; i < audioSourcePool.Count; ++i) audioSourcePool[i].Stop();
@@ -110,7 +117,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
 
             audioSourcePool.Add(gameObject.AddComponent<AudioSource>());
             audioSourceAvailability.Add(false);
-            return audioSourcePool[audioSourcePool.Count - 1];
+            return audioSourcePool[^1];
         }
 
         /// <summary>

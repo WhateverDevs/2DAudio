@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Audio;
@@ -9,6 +8,10 @@ using WhateverDevs.Core.Runtime.Common;
 using WhateverDevs.Core.Runtime.DataStructures;
 using WhateverDevs.SceneManagement.Runtime.AddressableManagement;
 using Zenject;
+
+#if ODIN_INSPECTOR_3
+using Sirenix.OdinInspector;
+#endif
 
 namespace WhateverDevs.TwoDAudio.Runtime
 {
@@ -27,8 +30,10 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// Seconds to wait until free audios are unloaded from RAM.
         /// </summary>
         [Tooltip("Seconds to wait until free audios are unloaded from RAM.")]
+        #if ODIN_INSPECTOR_3
         [FoldoutGroup("Configuration")]
         [HideInPlayMode]
+        #endif
         public float SecondsToUnLoadFreeAudiosFromRam = 120f;
 
         /// <summary>
@@ -56,8 +61,10 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// Dictionary with the audios that are loaded and not in use and the time they haven't been in use.
         /// </summary>
         [SerializeField]
+        #if ODIN_INSPECTOR_3
         [ReadOnly]
         [HideInEditorMode]
+        #endif
         private SerializableDictionary<string, float> FreeAudios;
 
         /// <summary>
@@ -178,7 +185,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
 
             if (FreeAudios.ContainsKey(audio.Asset.name)) FreeAudios.Remove(audio.Asset.name);
 
-            callback?.Invoke(true, (AudioClip) audio.Asset, GetGroupForAudio(audio));
+            callback?.Invoke(true, (AudioClip)audio.Asset, GetGroupForAudio(audio));
         }
 
         /// <summary>
@@ -256,9 +263,11 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <summary>
         /// Cache the audio names when the list is modified.
         /// </summary>
+        #if ODIN_INSPECTOR_3
         [InfoBox("Remember clicking the button when you modify the list!")]
         [PropertyOrder(-1)]
         [Button]
+        #endif
         private void CacheAudioReferences()
         {
             AudioAssets = new List<AssetReferenceT<AudioClip>>();
