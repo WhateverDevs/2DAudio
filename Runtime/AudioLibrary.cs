@@ -24,7 +24,11 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// List that holds all the 2D audios in the game and the mixer group they belong to.
         /// </summary>
         [SerializeField]
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         private List<AudioAssetReferenceAudioMixerGroupPair> Audios;
+        #else
+        private SerializableDictionary<AudioClip, AudioMixerGroup> Audios;
+        #endif
 
         /// <summary>
         /// Seconds to wait until free audios are unloaded from RAM.
@@ -41,7 +45,11 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         [SerializeField]
         [HideInInspector]
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         private List<AssetReferenceT<AudioClip>> AudioAssets;
+        #else
+        private List<AudioClip> AudioAssets;
+        #endif
 
         /// <summary>
         /// Cached list of all audio names.
@@ -85,13 +93,16 @@ namespace WhateverDevs.TwoDAudio.Runtime
         public void Construct(IAddressableManager addressableManagerReference)
         {
             initialized = false;
-            addressableManager = addressableManagerReference;
 
             FreeAudios = new SerializableDictionary<string, float>();
 
             AppEventsListener.Instance.AppUpdate += CheckFreeAudiosAndUnload;
 
+            #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
+            addressableManager = addressableManagerReference;
+
             addressableManager.CheckAvailableAddressables(report => initialized = true);
+            #endif
         }
 
         /// <summary>
@@ -109,7 +120,11 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// Get a list of all audios.
         /// </summary>
         /// <returns></returns>
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         public List<AssetReferenceT<AudioClip>> GetAllAudios() => AudioAssets.ShallowClone();
+        #else
+        public List<AudioClip> GetAllAudios() => AudioAssets.ShallowClone();
+        #endif
 
         /// <summary>
         /// Check if an audio is available to play.
@@ -130,6 +145,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         /// <param name="audio"></param>
         /// <returns></returns>
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         public bool IsAudioAvailable(AssetReferenceT<AudioClip> audio)
         {
             if (IsInitialized()) return addressableManager.IsAssetAvailable(audio);
@@ -137,6 +153,9 @@ namespace WhateverDevs.TwoDAudio.Runtime
             Logger.Error("Audio library not initialized yet!");
             return false;
         }
+        #else
+        public bool IsAudioAvailable(AudioClip audio) => Audios.ContainsKey(audio);
+        #endif
 
         /// <summary>
         /// Get an audio asset and group from its reference.
@@ -159,10 +178,22 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         /// <param name="audio"></param>
         /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         public void
             GetAudioAsset(AssetReferenceT<AudioClip> audio, Action<bool, AudioClip, AudioMixerGroup> callback) =>
             CoroutineRunner.Instance.StartCoroutine(GetAudioAssetRoutine(audio, callback));
+        #else
+        public void
+            GetAudioAsset(AudioClip audio, Action<bool, AudioClip, AudioMixerGroup> callback)
+        {
+            if (!IsAudioAvailable(audio)) callback?.Invoke(false, null, null);
 
+            callback?.Invoke(true, audio, Audios[audio]);
+        }
+
+        #endif
+
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         /// <summary>
         /// Get an audio asset and group from its asset reference.
         /// </summary>
@@ -187,6 +218,8 @@ namespace WhateverDevs.TwoDAudio.Runtime
 
             callback?.Invoke(true, (AudioClip)audio.Asset, GetGroupForAudio(audio));
         }
+
+        #endif
 
         /// <summary>
         /// Used to inform that an audio asset is no longer in use.
@@ -223,16 +256,24 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         /// <param name="audio"></param>
         /// <returns></returns>
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         public AudioMixerGroup GetGroupForAudio(AssetReferenceT<AudioClip> audio) =>
             CachedGroups[AudioAssets.IndexOf(audio)];
+        #else
+        public AudioMixerGroup GetGroupForAudio(AudioClip audio) => CachedGroups[AudioAssets.IndexOf(audio)];
+        #endif
 
         /// <summary>
         /// Translate audio name to asset reference.
         /// </summary>
         /// <param name="audioName"></param>
         /// <returns></returns>
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         private AssetReferenceT<AudioClip> NameToAssetReference(string audioName) =>
             AudioAssets[AudioNames.IndexOf(audioName)];
+        #else
+        private AudioClip NameToAssetReference(string audioName) => AudioAssets[AudioNames.IndexOf(audioName)];
+        #endif
 
         /// <summary>
         /// Check the available audios and unload if they've too much time without being used.
@@ -240,21 +281,22 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="deltaTime"></param>
         private void CheckFreeAudiosAndUnload(float deltaTime)
         {
-            List<string> audiosToUnload = new List<string>();
+            List<string> audiosToUnload = new();
 
-            foreach (KeyValuePair<string, float> keyValuePair in FreeAudios)
+            foreach ((string key, float _) in FreeAudios)
             {
-                FreeAudios[keyValuePair.Key] += deltaTime;
+                FreeAudios[key] += deltaTime;
 
-                if (FreeAudios[keyValuePair.Key] > SecondsToUnLoadFreeAudiosFromRam)
-                    audiosToUnload.Add(keyValuePair.Key);
+                if (FreeAudios[key] > SecondsToUnLoadFreeAudiosFromRam) audiosToUnload.Add(key);
             }
 
             for (int i = 0; i < audiosToUnload.Count; ++i)
             {
                 FreeAudios.Remove(audiosToUnload[i]);
 
+                #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
                 NameToAssetReference(audiosToUnload[i]).ReleaseAsset();
+                #endif
             }
         }
 
@@ -270,17 +312,29 @@ namespace WhateverDevs.TwoDAudio.Runtime
         #endif
         private void CacheAudioReferences()
         {
+            #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
             AudioAssets = new List<AssetReferenceT<AudioClip>>();
+            #else
+            AudioAssets = new List<AudioClip>();
+            #endif
 
             AudioNames = new List<string>();
 
             CachedGroups = new List<AudioMixerGroup>();
 
             for (int i = 0; i < Audios.Count; ++i)
-                if (Audios[i] != null && Audios[i].Key.editorAsset != null)
+                if (Audios[i] != null
+                    #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
+                 && Audios[i].Key.editorAsset != null
+                    #endif
+                   )
                 {
                     AudioAssets.Add(Audios[i].Key);
+                    #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
                     AudioNames.Add(AudioAssets[i].editorAsset.name);
+                    #else
+                    AudioNames.Add(AudioAssets[i].name);
+                    #endif
                     CachedGroups.Add(Audios[i].Value);
                 }
         }

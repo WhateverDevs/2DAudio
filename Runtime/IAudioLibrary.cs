@@ -15,7 +15,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// Method to know if the library has been initialized.
         /// </summary>
         bool IsInitialized();
-        
+
         /// <summary>
         /// Get a list of all the audio names available.
         /// </summary>
@@ -26,8 +26,12 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// Get a list of all audios.
         /// </summary>
         /// <returns></returns>
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         List<AssetReferenceT<AudioClip>> GetAllAudios();
-        
+        #else
+        public List<AudioClip> GetAllAudios();
+        #endif
+
         /// <summary>
         /// Check if an audio is available to play.
         /// </summary>
@@ -41,13 +45,17 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="audioName"></param>
         /// <returns></returns>
         bool IsAudioAvailable(string audioName);
-        
+
         /// <summary>
         /// Check if an audio is available to play.
         /// </summary>
         /// <param name="audio"></param>
         /// <returns></returns>
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         bool IsAudioAvailable(AssetReferenceT<AudioClip> audio);
+        #else
+        bool IsAudioAvailable(AudioClip audio);
+        #endif
 
         /// <summary>
         /// Get an audio asset and group from its reference.
@@ -55,27 +63,31 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="audioReference"></param>
         /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
         void GetAudioAsset(AudioReference audioReference, Action<bool, AudioClip, AudioMixerGroup> callback);
-        
+
         /// <summary>
         /// Get an audio asset and group from its name.
         /// </summary>
         /// <param name="audioName"></param>
         /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
         void GetAudioAsset(string audioName, Action<bool, AudioClip, AudioMixerGroup> callback);
-        
+
         /// <summary>
         /// Get an audio asset and group from its asset reference.
         /// </summary>
         /// <param name="audio"></param>
         /// <param name="callback">Callback with bool of success, the audio clip to play and its mixer group.</param>
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         void GetAudioAsset(AssetReferenceT<AudioClip> audio, Action<bool, AudioClip, AudioMixerGroup> callback);
+        #else
+        void GetAudioAsset(AudioClip audio, Action<bool, AudioClip, AudioMixerGroup> callback);
+        #endif
 
         /// <summary>
         /// Used to inform that an audio asset is no longer in use.
         /// </summary>
         /// <param name="audioReference">The audio reference to free.</param>
         void FreeAudioAsset(AudioReference audioReference);
-        
+
         /// <summary>
         /// Used to inform that an audio asset is no longer in use.
         /// </summary>
@@ -95,12 +107,16 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="audioName"></param>
         /// <returns></returns>
         AudioMixerGroup GetGroupForAudio(string audioName);
-        
+
         /// <summary>
         /// Get the mixer group of an audio.
         /// </summary>
         /// <param name="audio"></param>
         /// <returns></returns>
+        #if WHATEVERDEVS_2DAUDIO_ADDRESSABLES
         AudioMixerGroup GetGroupForAudio(AssetReferenceT<AudioClip> audio);
+        #else
+        AudioMixerGroup GetGroupForAudio(AudioClip audio);
+        #endif
     }
 }

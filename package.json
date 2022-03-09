@@ -1,6 +1,6 @@
 {
   "name": "whateverdevs.2daudio",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "dependencies": {
     "whateverdevs.core": "0.1.0",
     "whateverdevs.scenemanagement": "0.0.4"

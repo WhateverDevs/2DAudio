@@ -33,11 +33,11 @@ namespace WhateverDevs.TwoDAudio.Editor
 
                 if (library == null)
                     library =
-                        (AudioLibrary) EditorGUILayout.ObjectField(new GUIContent("Audio library",
-                                                                       "A reference to the audio library is needed."),
-                                                                   library,
-                                                                   typeof(AudioLibrary),
-                                                                   false);
+                        (AudioLibrary)EditorGUILayout.ObjectField(new GUIContent("Audio library",
+                                                                      "A reference to the audio library is needed."),
+                                                                  library,
+                                                                  typeof(AudioLibrary),
+                                                                  false);
             }
             else if (library.GetAllAudioNames().Count == 0)
                 EditorGUILayout.HelpBox("There are no audios in the library.", MessageType.Error);
