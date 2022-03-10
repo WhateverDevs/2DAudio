@@ -1,8 +1,10 @@
 #if ODIN_INSPECTOR_3
+using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
+using WhateverDevs.Core.Editor.Utils;
 using WhateverDevs.TwoDAudio.Runtime;
 
 namespace WhateverDevs.TwoDAudio.Editor
@@ -28,8 +30,16 @@ namespace WhateverDevs.TwoDAudio.Editor
 
             if (library == null)
             {
-                library =
-                    AssetDatabase.LoadAssetAtPath<AudioLibrary>(AudioLibraryCreator.AudioLibraryPath);
+                EditorUtility.DisplayProgressBar("2D Audio", "Looking for audio library...", .5f);
+
+                try
+                {
+                    library = AssetManagementUtils.FindAssetsByType<AudioLibrary>().First();
+                }
+                finally
+                {
+                    EditorUtility.ClearProgressBar();
+                }
 
                 if (library == null)
                     library =
