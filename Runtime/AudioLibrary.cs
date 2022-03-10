@@ -1,7 +1,9 @@
 using System;
+// ReSharper disable once RedundantUsingDirective
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+// ReSharper disable once RedundantUsingDirective
 using UnityEngine.AddressableAssets;
 using UnityEngine.Audio;
 using WhateverDevs.Core.Runtime.Common;
@@ -262,6 +264,20 @@ namespace WhateverDevs.TwoDAudio.Runtime
             CachedGroups[AudioAssets.IndexOf(audio)];
         #else
         public AudioMixerGroup GetGroupForAudio(AudioClip audio) => CachedGroups[AudioAssets.IndexOf(audio)];
+        #endif
+
+        #if UNITY_EDITOR
+
+        /// <summary>
+        /// Add an audio to the library if it doesn't exist in it.
+        /// </summary>
+        /// <param name="audio">Audio to add.</param>
+        /// <param name="mixerGroup">Mixer group to assign.</param>
+        public void AddAudioIfItsNotIn(AudioClip audio, AudioMixerGroup mixerGroup)
+        {
+            if (!Audios.ContainsKey(audio)) Audios[audio] = mixerGroup;
+        }
+
         #endif
 
         /// <summary>
