@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 #if ODIN_INSPECTOR_3
 using Sirenix.OdinInspector;
 #endif
@@ -26,16 +27,18 @@ namespace WhateverDevs.TwoDAudio.Runtime
         [ValueDropdown(nameof(GetAvailableAudios))]
         #endif
         [Searchable]
-        [InfoBox("Library hasn't been found!", InfoMessageType.Error, VisibleIf = nameof(libraryNotFound))]
-        [DisableIf(nameof(libraryNotFound))]
+        [InfoBox("Library hasn't been found!", InfoMessageType.Error, VisibleIf = "@AudioLibrary == null")]
+        [DisableIf("@AudioLibrary == null")]
         [HideLabel]
         #endif
         public string Audio;
 
         /// <summary>
-        /// Flag to mark the library not found error.
+        /// Reference to the audio library to be cached in editor mode.
         /// </summary>
-        private bool libraryNotFound;
+        [HideInInspector]
+        [SerializeField]
+        private AudioLibrary AudioLibrary;
 
         #if UNITY_EDITOR
 
@@ -45,22 +48,22 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <returns>A list of all available audio names.</returns>
         private List<string> GetAvailableAudios()
         {
-            AudioLibrary library;
-
-            EditorUtility.DisplayProgressBar("2D Audio", "Looking for audio library...", .5f);
-
-            try
+            // ReSharper disable once InvertIf
+            if (AudioLibrary == null)
             {
-                library = AssetManagementUtils.FindAssetsByType<AudioLibrary>().First();
-            }
-            finally
-            {
-                EditorUtility.ClearProgressBar();
+                EditorUtility.DisplayProgressBar("2D Audio", "Looking for audio library...", .5f);
+
+                try
+                {
+                    AudioLibrary = AssetManagementUtils.FindAssetsByType<AudioLibrary>().First();
+                }
+                finally
+                {
+                    EditorUtility.ClearProgressBar();
+                }
             }
 
-            libraryNotFound = library == null;
-
-            return libraryNotFound ? null : library.GetAllAudioNames();
+            return AudioLibrary == null ? null : AudioLibrary.GetAllAudioNames();
         }
 
         #endif
