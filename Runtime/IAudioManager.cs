@@ -17,7 +17,9 @@
         /// </summary>
         /// <param name="audioReference">The audio to play.</param>
         /// <param name="loop">Loop the audio?</param>
-        void PlayAudio(AudioReference audioReference, bool loop = false);
+        /// <param name="pitch">Pitch of the audio. This affects both pitch and tempo.</param>
+        /// <param name="volume">Volume of the audio.</param>
+        void PlayAudio(AudioReference audioReference, bool loop = false, float pitch = 1, float volume = 1);
 
         /// <summary>
         /// Stop the given audio if it's playing.

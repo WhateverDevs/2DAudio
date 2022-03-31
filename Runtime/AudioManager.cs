@@ -43,11 +43,13 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         /// <param name="audioReference">The audio to play.</param>
         /// <param name="loop">Loop the audio?</param>
+        /// <param name="pitch">Pitch of the audio. This affects both pitch and tempo.</param>
+        /// <param name="volume">Volume of the audio.</param>
         #if ODIN_INSPECTOR_3
         [FoldoutGroup("Debug")]
         [Button]
         #endif
-        public void PlayAudio(AudioReference audioReference, bool loop = false) =>
+        public void PlayAudio(AudioReference audioReference, bool loop = false, float pitch = 1, float volume = 1) =>
             audioLibrary.GetAudioAsset(audioReference,
                                        (success, clip, group) =>
                                        {
@@ -58,6 +60,8 @@ namespace WhateverDevs.TwoDAudio.Runtime
                                            audioSource.outputAudioMixerGroup = group;
                                            audioSource.clip = clip;
                                            audioSource.loop = loop;
+                                           audioSource.pitch = pitch;
+                                           audioSource.volume = volume;
                                            audioSource.Play();
                                        });
 
