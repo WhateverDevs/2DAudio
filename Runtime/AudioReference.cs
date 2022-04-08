@@ -15,8 +15,10 @@ namespace WhateverDevs.TwoDAudio.Runtime
     /// <summary>
     /// Data class to store the reference to an audio.
     /// </summary>
+    #if ODIN_INSPECTOR_3
     [Serializable]
     [InlineProperty]
+    #endif
     public struct AudioReference
     {
         /// <summary>

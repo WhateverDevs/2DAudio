@@ -1,8 +1,8 @@
 {
   "name": "whateverdevs.2daudio",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "dependencies": {
-    "whateverdevs.core": "0.2.0",
+    "whateverdevs.core": "0.2.7",
     "whateverdevs.scenemanagement": "0.0.18"
   },
   "displayName": "2D Audio",
