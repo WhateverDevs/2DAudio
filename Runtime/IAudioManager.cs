@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using UnityEngine;
 
 namespace WhateverDevs.TwoDAudio.Runtime
 {
@@ -30,7 +31,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
                        bool loop = false,
                        float pitch = 1,
                        float volume = 1
-            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+                       #if WHATEVERDEVS_2DAUDIO_DOTWEEN
                        ,
                        float fadeTime = 0
             #endif
@@ -52,7 +53,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="audioReference">Audio to stop.</param>
         /// <param name="fadeTime">If DoTween integration is available, set a time for the audio to fade out.</param>
         void StopAudio(AudioReference audioReference
-            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+                       #if WHATEVERDEVS_2DAUDIO_DOTWEEN
                        ,
                        float fadeTime = 0
             #endif
@@ -88,5 +89,23 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// Stop all audios, probably only used in abort situations.
         /// </summary>
         void StopAllAudios();
+
+        /// <summary>
+        /// We perceive volume as a logarithmic value, so we need to convert it.
+        /// We clamp the minimum to 0.0001f because logarithms with 0s are no good.
+        /// Credits to: https://gamedevbeginner.com/the-right-way-to-make-a-volume-slider-in-unity-using-logarithmic-conversion/
+        /// </summary>
+        /// <param name="linearVolume"></param>
+        public static float LinearVolumeToLogarithmicVolume(float linearVolume) =>
+            Mathf.Log10(Mathf.Clamp(linearVolume, 0.0001f, 1)) * 20;
+
+        /// <summary>
+        /// We perceive volume as a logarithmic value, so we need to convert it.
+        /// We clamp the minimum to 0.0001f because logarithms with 0s are no good.
+        /// Credits to: https://gamedevbeginner.com/the-right-way-to-make-a-volume-slider-in-unity-using-logarithmic-conversion/
+        /// </summary>
+        /// <param name="logarithmicVolume"></param>
+        public static float LogarithmicVolumeToLinearVolume(float logarithmicVolume) =>
+            Mathf.Pow(10, logarithmicVolume / 20f);
     }
 }

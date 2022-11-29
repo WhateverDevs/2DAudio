@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Audio;
 using WhateverDevs.Core.Runtime.Common;
 using Zenject;
 
@@ -29,6 +30,12 @@ namespace WhateverDevs.TwoDAudio.Runtime
         private IAudioLibrary audioLibrary;
 
         /// <summary>
+        /// Reference to the main mixer.
+        /// </summary>
+        [Inject]
+        private AudioMixer mainMixer;
+
+        /// <summary>
         /// List of all the available audio sources this object has.
         /// </summary>
         private List<AudioSource> audioSourcePool;
@@ -39,9 +46,9 @@ namespace WhateverDevs.TwoDAudio.Runtime
         private List<bool> audioSourceAvailability;
 
         /// <summary>
-        /// Dictionary used to store the original volumes of each audio source when they are muted.
+        /// Dictionary used to store the original volume of the mixer when it is muted..
         /// </summary>
-        private Dictionary<AudioSource, float> originalVolumes;
+        private float originalVolume;
 
         /// <summary>
         /// Check if an audio is available to play.
@@ -69,7 +76,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
                               bool loop = false,
                               float pitch = 1,
                               float volume = 1
-            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+                              #if WHATEVERDEVS_2DAUDIO_DOTWEEN
                               ,
                               float fadeTime = 0
             #endif
@@ -131,7 +138,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         [Button]
         #endif
         public void StopAudio(AudioReference audioReference
-            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+                              #if WHATEVERDEVS_2DAUDIO_DOTWEEN
                               ,
                               float fadeTime = 0
             #endif
@@ -172,7 +179,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         ) =>
             StartCoroutine(UnmuteAllAudios(
                                            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
-                                            fadeTime
+                                           fadeTime
                                            #endif
                                           ));
 
@@ -181,6 +188,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         #endif
         /// <summary>
         /// Unmute all the audios without stopping them.
+        /// This method will only work if the audio mixer has a property called MasterVolume!
         /// </summary>
         /// <param name="fadeTime">If DoTween integration is available, set a time for the audios to fade in.</param>
         public IEnumerator UnmuteAllAudios(
@@ -189,18 +197,15 @@ namespace WhateverDevs.TwoDAudio.Runtime
             #endif
         )
         {
-            foreach (AudioSource audioSource in audioSourcePool.Where(audioSource => audioSource.isPlaying))
-            {
-                #if WHATEVERDEVS_2DAUDIO_DOTWEEN
-                audioSource.DOFade(originalVolumes[audioSource], fadeTime);
-                #else
-                audioSource.volume = originalVolumes[audioSource];
-                #endif
-            }
-
             #if WHATEVERDEVS_2DAUDIO_DOTWEEN
-            yield return new WaitForSeconds(fadeTime);
+            float volume = 0;
+
+            yield return DOTween.To(() => volume, x => volume = x, originalVolume, fadeTime)
+                                .OnUpdate(() => mainMixer.SetFloat("MasterVolume",
+                                                                   LinearVolumeToLogarithmicVolume(volume)))
+                                .WaitForCompletion();
             #else
+            mainMixer.SetFloat("MasterVolume", originalVolume);
             yield break;
             #endif
         }
@@ -221,7 +226,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         ) =>
             StartCoroutine(MuteAllAudios(
                                          #if WHATEVERDEVS_2DAUDIO_DOTWEEN
-                                            fadeTime
+                                         fadeTime
                                          #endif
                                         ));
 
@@ -230,6 +235,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         #endif
         /// <summary>
         /// Mute all the audios without stopping them.
+        /// This method will only work if the audio mixer has a property called MasterVolume!
         /// </summary>
         /// <param name="fadeTime">If DoTween integration is available, set a time for the audios to fade out.</param>
         public IEnumerator MuteAllAudios(
@@ -238,22 +244,19 @@ namespace WhateverDevs.TwoDAudio.Runtime
             #endif
         )
         {
-            originalVolumes = new Dictionary<AudioSource, float>();
+            mainMixer.GetFloat("MasterVolume", out float logVolume);
 
-            foreach (AudioSource audioSource in audioSourcePool.Where(audioSource => audioSource.isPlaying))
-            {
-                originalVolumes[audioSource] = audioSource.volume;
-
-                #if WHATEVERDEVS_2DAUDIO_DOTWEEN
-                audioSource.DOFade(0, fadeTime);
-                #else
-                audioSource.volume = 0;
-                #endif
-            }
+            originalVolume = LogarithmicVolumeToLinearVolume(logVolume);
 
             #if WHATEVERDEVS_2DAUDIO_DOTWEEN
-            yield return new WaitForSeconds(fadeTime);
+            float volume = originalVolume;
+
+            yield return DOTween.To(() => volume, x => volume = x, 0, fadeTime)
+                                .OnUpdate(() => mainMixer.SetFloat("MasterVolume",
+                                                                   LinearVolumeToLogarithmicVolume(volume)))
+                                .WaitForCompletion();
             #else
+            mainMixer.SetFloat("MasterVolume", -80);
             yield break;
             #endif
         }
@@ -307,7 +310,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// </summary>
         private void CheckAudioSourceAvailability()
         {
-            List<AudioClip> clipsToFree = new List<AudioClip>();
+            List<AudioClip> clipsToFree = new();
 
             for (int i = 0; i < audioSourcePool.Count; ++i)
             {
@@ -332,5 +335,19 @@ namespace WhateverDevs.TwoDAudio.Runtime
                 if (canFree) audioLibrary.FreeAudioAsset(clipsToFree[i].name);
             }
         }
+
+        /// <summary>
+        /// We perceive volume as a logarithmic value, so we need to convert it.
+        /// </summary>
+        /// <param name="linearVolume"></param>
+        public static float LinearVolumeToLogarithmicVolume(float linearVolume) =>
+            IAudioManager.LinearVolumeToLogarithmicVolume(linearVolume);
+
+        /// <summary>
+        /// We perceive volume as a logarithmic value, so we need to convert it.
+        /// </summary>
+        /// <param name="logarithmicVolume"></param>
+        public static float LogarithmicVolumeToLinearVolume(float logarithmicVolume) =>
+            IAudioManager.LogarithmicVolumeToLinearVolume(logarithmicVolume);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Audio;
 using Zenject;
 
 namespace WhateverDevs.TwoDAudio.Runtime
@@ -12,7 +13,14 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <summary>
         /// Reference to the audio library.
         /// </summary>
-        public AudioLibrary AudioLibrary;
+        [SerializeField]
+        private AudioLibrary AudioLibrary;
+
+        /// <summary>
+        /// Main mixer group.
+        /// </summary>
+        [SerializeField]
+        private AudioMixer MainMixer;
 
         /// <summary>
         /// Inject the references.
@@ -24,6 +32,8 @@ namespace WhateverDevs.TwoDAudio.Runtime
             IAudioManager audioManager = AudioManager.Instance;
             
             Container.QueueForInject(audioManager);
+
+            Container.Bind<AudioMixer>().FromInstance(MainMixer).WhenInjectedInto<IAudioManager>().Lazy();
 
             Container.Bind<IAudioLibrary>().FromInstance(AudioLibrary).AsSingle().Lazy();
 
