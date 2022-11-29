@@ -39,6 +39,11 @@ namespace WhateverDevs.TwoDAudio.Runtime
         private List<bool> audioSourceAvailability;
 
         /// <summary>
+        /// Dictionary used to store the original volumes of each audio source when they are muted.
+        /// </summary>
+        private Dictionary<AudioSource, float> originalVolumes;
+
+        /// <summary>
         /// Check if an audio is available to play.
         /// </summary>
         /// <param name="audioReference"></param>
@@ -64,7 +69,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
                               bool loop = false,
                               float pitch = 1,
                               float volume = 1
-                              #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
                               ,
                               float fadeTime = 0
             #endif
@@ -126,7 +131,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
         [Button]
         #endif
         public void StopAudio(AudioReference audioReference
-                              #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
                               ,
                               float fadeTime = 0
             #endif
@@ -150,6 +155,108 @@ namespace WhateverDevs.TwoDAudio.Runtime
                                                    #endif
                                                }
                                        });
+
+        #if !WHATEVERDEVS_2DAUDIO_DOTWEEN
+        // ReSharper disable once InvalidXmlDocComment
+        #endif
+        /// <summary>
+        /// Unmute all the audios without stopping them.
+        /// </summary>
+        /// <param name="fadeTime">If DoTween integration is available, set a time for the audios to fade in.</param>
+        [FoldoutGroup("Debug")]
+        [Button("Unmute All")]
+        private void TestUnmuteAllAudios(
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            float fadeTime = 0
+            #endif
+        ) =>
+            StartCoroutine(UnmuteAllAudios(
+                                           #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+                                            fadeTime
+                                           #endif
+                                          ));
+
+        #if !WHATEVERDEVS_2DAUDIO_DOTWEEN
+        // ReSharper disable once InvalidXmlDocComment
+        #endif
+        /// <summary>
+        /// Unmute all the audios without stopping them.
+        /// </summary>
+        /// <param name="fadeTime">If DoTween integration is available, set a time for the audios to fade in.</param>
+        public IEnumerator UnmuteAllAudios(
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            float fadeTime = 0
+            #endif
+        )
+        {
+            foreach (AudioSource audioSource in audioSourcePool.Where(audioSource => audioSource.isPlaying))
+            {
+                #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+                audioSource.DOFade(originalVolumes[audioSource], fadeTime);
+                #else
+                audioSource.volume = originalVolumes[audioSource];
+                #endif
+            }
+
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            yield return new WaitForSeconds(fadeTime);
+            #else
+            yield break;
+            #endif
+        }
+
+        #if !WHATEVERDEVS_2DAUDIO_DOTWEEN
+        // ReSharper disable once InvalidXmlDocComment
+        #endif
+        /// <summary>
+        /// Mute all the audios without stopping them.
+        /// </summary>
+        /// <param name="fadeTime">If DoTween integration is available, set a time for the audios to fade out.</param>
+        [FoldoutGroup("Debug")]
+        [Button("Mute All")]
+        private void TestMuteAllAudios(
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            float fadeTime = 0
+            #endif
+        ) =>
+            StartCoroutine(MuteAllAudios(
+                                         #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+                                            fadeTime
+                                         #endif
+                                        ));
+
+        #if !WHATEVERDEVS_2DAUDIO_DOTWEEN
+        // ReSharper disable once InvalidXmlDocComment
+        #endif
+        /// <summary>
+        /// Mute all the audios without stopping them.
+        /// </summary>
+        /// <param name="fadeTime">If DoTween integration is available, set a time for the audios to fade out.</param>
+        public IEnumerator MuteAllAudios(
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            float fadeTime = 0
+            #endif
+        )
+        {
+            originalVolumes = new Dictionary<AudioSource, float>();
+
+            foreach (AudioSource audioSource in audioSourcePool.Where(audioSource => audioSource.isPlaying))
+            {
+                originalVolumes[audioSource] = audioSource.volume;
+
+                #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+                audioSource.DOFade(0, fadeTime);
+                #else
+                audioSource.volume = 0;
+                #endif
+            }
+
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            yield return new WaitForSeconds(fadeTime);
+            #else
+            yield break;
+            #endif
+        }
 
         /// <summary>
         /// Stop all audios, probably only used in abort situations.

@@ -15,6 +15,9 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <returns></returns>
         bool IsAudioAvailable(AudioReference audioReference);
 
+        #if !WHATEVERDEVS_2DAUDIO_DOTWEEN
+        // ReSharper disable once InvalidXmlDocComment
+        #endif
         /// <summary>
         /// Play an audio once.
         /// </summary>
@@ -27,7 +30,7 @@ namespace WhateverDevs.TwoDAudio.Runtime
                        bool loop = false,
                        float pitch = 1,
                        float volume = 1
-                       #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
                        ,
                        float fadeTime = 0
             #endif
@@ -40,15 +43,44 @@ namespace WhateverDevs.TwoDAudio.Runtime
         /// <param name="result">Event returning true if it is playing.</param>
         IEnumerator IsAudioPlaying(AudioReference audioReference, Action<bool> result);
 
+        #if !WHATEVERDEVS_2DAUDIO_DOTWEEN
+        // ReSharper disable once InvalidXmlDocComment
+        #endif
         /// <summary>
         /// Stop the given audio if it's playing.
         /// </summary>
         /// <param name="audioReference">Audio to stop.</param>
         /// <param name="fadeTime">If DoTween integration is available, set a time for the audio to fade out.</param>
         void StopAudio(AudioReference audioReference
-                       #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
                        ,
                        float fadeTime = 0
+            #endif
+        );
+
+        #if !WHATEVERDEVS_2DAUDIO_DOTWEEN
+        // ReSharper disable once InvalidXmlDocComment
+        #endif
+        /// <summary>
+        /// Unmute all the audios without stopping them.
+        /// </summary>
+        /// <param name="fadeTime">If DoTween integration is available, set a time for the audios to fade in.</param>
+        IEnumerator UnmuteAllAudios(
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            float fadeTime = 0
+            #endif
+        );
+
+        #if !WHATEVERDEVS_2DAUDIO_DOTWEEN
+        // ReSharper disable once InvalidXmlDocComment
+        #endif
+        /// <summary>
+        /// Mute all the audios without stopping them.
+        /// </summary>
+        /// <param name="fadeTime">If DoTween integration is available, set a time for the audios to fade out.</param>
+        IEnumerator MuteAllAudios(
+            #if WHATEVERDEVS_2DAUDIO_DOTWEEN
+            float fadeTime = 0
             #endif
         );
 
